@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="keywords" content="在线录制屏幕视频">
+    <meta name="description" content="直接在线录制屏幕视频，无需下载工具，免费使用，网页直接在线录制">
+    <title>在线录制屏幕视频</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/vue/2.6.13/vue.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <style>
+        .content{
+            display: flex;
+            justify-content: center;
+            margin: 10px 0;
+        }
+        #player{
+            border: solid 1px #409EFF;
+        }
+        .el-dialog__body{
+            padding: 5px 20px;
+        }
+        .el-dialog__header {
+            padding: 10px 20px 10px;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div class="content">
+        <video autoplay playsinline id="player" muted width="600" height="400"></video>
+    </div>
+    <div class="content">
+        <div>
+            <div class="content">
+                <el-button type="primary" @click="start">开始录制</el-button>
+                <el-button type="primary" @click="stop">结束录制</el-button>
+            </div>
+            <p>tips：</p>
+            <p>1、选择分享整个屏幕时，如果想要系统声音请勾选左下角分享系统中的音频</p>
+            <p>2、选择分享窗口时，系统声音无法录制</p>
+        </div>
+    </div>
+
+    <el-dialog
+            title="下载"
+            :visible.sync="dialogVisible"
+            :close-on-click-modal="false"
+            :show-close="false"
+            width="30%">
+        <p>请下载录制视频，取消则清空录制视频</p>
+        <p style="display: flex;">
+            <span>保存视频名字：</span>
+            <el-input size="small" v-model="videoName" style="width:200px"></el-input>
+        </p>
+        <span slot="footer" class="dialog-footer">
+        <el-button @click="cancelDownload">取 消</el-button>
+        <el-button type="primary" @click="download">确 定</el-button>
+      </span>
+    </el-dialog>
+</div>
+
+<script>
+    new Vue({
+        el: '#app',
+        data(){
+            return {
+                mediaRecorder: null,
+                buffer: [],
+                dialogVisible: false,
+                videoName: '屏幕录制'
+            }
+        },
+        methods: {
+            start(){
+                if (!navigator.mediaDevices) {
+                    ELEMENT.Message.error('你的浏览器不支持这个特性');
+                    return null;
+                }
+
+                navigator.mediaDevices.getDisplayMedia({
+                    video: true,
+                    audio: true
+                }).then((stream) => {
+                    document.querySelector('#player').srcObject = stream;
+                    const options = {
+                        mimeType: 'video/webm'
+                    }
+                    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                        console.error('不支持的视频格式');
+                        return;
+                    }
+                    try {
+                        this.mediaRecorder = new MediaRecorder(stream, options);
+                        // 处理采集到的事件
+                        this.mediaRecorder.ondataavailable = (e) => {
+                            if (e && e.data && e.data.size > 0) {
+                                this.buffer.push(e.data);
+                            }
+                        };
+                        // 开始录制
+                        this.mediaRecorder.start(10);
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }).catch((err) => {
+                    console.error(err);
+                });
+            },
+            stop(){
+                if (this.mediaRecorder) {
+                    this.mediaRecorder.stop();
+                    this.dialogVisible = true;
+                }
+            },
+            cancelDownload(){
+                location.reload();
+            },
+            download(){
+                if (this.buffer.length) {
+                    const blob = new Blob(this.buffer, { type: 'video/webm' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.style.display = 'none';
+                    a.download = this.videoName + '.mp4';
+                    a.click();
+                    location.reload();
+                } else {
+                    ELEMENT.Message.error('还没有录制任何内容');
+                }
+            }
+        }
+    })
+
+</script>
+</body>
+</html>

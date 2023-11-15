@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>webrtc拍照</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+    </style>
+</head>
+<body>
+<div>
+    <video id="cameraVideo" width="300" height="200" autoplay="true"></video>
+</div>
+<button onclick="takePhoto()">开始</button>
+<button onclick="snapPhoto()">拍照</button>
+<button onclick="closePhoto()">关闭</button>
+
+<script>
+    let mediaStream = null;
+    var track = null;
+
+    function takePhoto () {
+        navigator.getUserMedia({
+            video: true
+        },function (stream) {
+            var video = document.getElementById('cameraVideo');
+            video.srcObject = stream
+            mediaStream = stream;
+            track = stream.getTracks()[0];
+        },function (err) {
+            console.log(err);
+        });
+    }
+
+    function snapPhoto () {
+        var canvas = document.createElement('canvas');
+        canvas.width = "300";
+        canvas.height = "200";
+        var video = document.getElementById('cameraVideo');
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, 300, 225);
+        canvas.toBlob(function(blob){
+            var file = new File([blob], Date.now().toString() + '.png', {
+                type: "image/png",
+                lastModified: Date.now()
+            });
+            download(Date.now().toString() + '.png', file);
+        });
+    }
+
+    function closePhoto () {
+        if (mediaStream !== null) {
+            if (mediaStream.stop) {
+                mediaStream.stop();
+            }
+        };
+        if (track !== null) {
+            if (track.stop) {
+                track.stop();
+            }
+        };
+
+        var video = document.getElementById('cameraVideo');
+        video.src = "";
+    }
+
+    const download = (fileName, blob) => {
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(link.href);
+    };
+</script>
+</body>
+</html>
