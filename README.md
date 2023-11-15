@@ -1,4 +1,4 @@
-#### 基于srs+socketio+webrtc实现的会议系统
+### 基于srs+socketio+webrtc实现的会议系统
 注：本项目是个人学习项目，可能存在着各种Bug,如果您有意愿修复，欢迎提PR.
 
 ### 启动服务端meeting
