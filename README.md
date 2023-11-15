@@ -1,9 +1,5 @@
 #### 基于srs+socketio+webrtc实现的会议系统
 注：本项目是个人学习项目，可能存在着各种Bug,如果您有意愿修复，欢迎提PR.
-![NiceTool](meetingstart.png)
-![NiceTool](meeting.png)
-![NiceTool](meetinghistory.png)
-![NiceTool](meetingdetail.png)
 
 ### 启动服务端meeting
 1.将meeting.sql导入至自己的数据库
@@ -34,3 +30,10 @@ zhouning 111111
 laoning 111111
 xiaoning 111111
 ```
+
+### 系统部分截图
+![NiceTool](meetingstart.png)
+![NiceTool](meeting.png)
+![NiceTool](meetinghistory.png)
+![NiceTool](meetingdetail.png)
+
