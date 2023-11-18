@@ -3,6 +3,9 @@ package io.springstudent.meeting.room.service;
 import com.gysoft.jdbc.bean.Page;
 import com.gysoft.jdbc.bean.PageResult;
 import io.springstudent.meeting.room.bean.RoomInfo;
+import io.springstudent.meeting.room.pojo.RoomBoardTxt;
+
+import java.util.List;
 
 /**
  * @author zhouning
@@ -17,4 +20,6 @@ public interface RoomService {
     RoomInfo queryRoom(String roomCode)throws Exception;
 
     PageResult<RoomInfo> pageRoom(Page page)throws Exception;
+
+    List<RoomBoardTxt> listRoomBoardTxt(String roomCode)throws Exception;
 }

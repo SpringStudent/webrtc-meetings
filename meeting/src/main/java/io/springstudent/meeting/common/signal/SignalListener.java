@@ -13,10 +13,12 @@ import io.springstudent.meeting.chat.pojo.Chat;
 import io.springstudent.meeting.common.bean.RoomEvent;
 import io.springstudent.meeting.common.util.EmptyUtils;
 import io.springstudent.meeting.room.dao.RoomBoardDao;
+import io.springstudent.meeting.room.dao.RoomBoardTxtDao;
 import io.springstudent.meeting.room.dao.RoomDao;
 import io.springstudent.meeting.room.dao.RoomHistoryDao;
 import io.springstudent.meeting.room.pojo.Room;
 import io.springstudent.meeting.room.pojo.RoomBoard;
+import io.springstudent.meeting.room.pojo.RoomBoardTxt;
 import io.springstudent.meeting.room.pojo.RoomHistory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,6 +49,8 @@ public class SignalListener implements ISignalListener {
     private RoomDao roomDao;
     @Resource
     private RoomBoardDao roomBoardDao;
+    @Resource
+    private RoomBoardTxtDao roomBoardTxtDao;
 
     @Override
     @OnConnect
@@ -120,10 +124,26 @@ public class SignalListener implements ISignalListener {
     }
 
     @Override
-    @OnEvent("drawBoard")
-    public void drawBoard(SocketIOClient client, int nowX, int nowY, int x, int y, String color, int drawSize) throws Exception {
+    @OnEvent("drawLine")
+    public void drawLine(SocketIOClient client, int nowX, int nowY, int x, int y, String color, int drawSize) throws Exception {
         String roomCode = roomCode(client);
-        socketIOServer.getRoomOperations(roomCode).sendEvent("drawBoard", client, nowX, nowY, x, y, color, drawSize);
+        socketIOServer.getRoomOperations(roomCode).sendEvent("drawLine", client, nowX, nowY, x, y, color, drawSize);
+    }
+
+    @Override
+    @OnEvent("drawText")
+    public void drawText(SocketIOClient client, String id, String txt, int x, int y) throws Exception {
+        String roomCode = roomCode(client);
+        socketIOServer.getRoomOperations(roomCode).sendEvent("drawText", client, txt, x, y);
+        roomBoardTxtDao.save(RoomBoardTxt.builder().roomCode(roomCode).id(id).txt(txt).x(x).y(y).build());
+    }
+
+    @Override
+    @OnEvent("reDrawText")
+    public void reDrawText(SocketIOClient client, String id, String txt, int x, int y, int width, int height) throws Exception {
+        String roomCode = roomCode(client);
+        roomBoardTxtDao.updateWithSql(new SQL().update(RoomBoardTxt.class).set("txt", txt).set("x", x).set("y", y).where("id", id));
+        socketIOServer.getRoomOperations(roomCode).sendEvent("reDrawText", client, txt, x, y, width, height);
     }
 
     @Override
@@ -138,6 +158,7 @@ public class SignalListener implements ISignalListener {
     public void clearBoard(SocketIOClient client) throws Exception {
         String roomCode = roomCode(client);
         roomBoardDao.updateWithSql(new SQL().update(RoomBoard.class).set("boardData", null).where("roomCode", roomCode));
+        roomBoardTxtDao.deleteWithCriteria(new Criteria().where("roomCode",roomCode));
         socketIOServer.getRoomOperations(roomCode).sendEvent("clearBoard", client);
     }
 

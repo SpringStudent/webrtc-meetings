@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
  * @date 2023/04/07 13:24
  */
 @Data
-public class Chain {
+public class  Chain {
 
     private Entry head;
 
@@ -69,6 +69,5 @@ public class Chain {
         private Entry next;
         private Condition condition;
     }
-
 
 }

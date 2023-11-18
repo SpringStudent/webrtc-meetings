@@ -1129,3 +1129,17 @@ INSERT INTO `room_history` VALUES ('4738', 'KffBj0wEN', 'join', 'laoning', '1700
 INSERT INTO `room_history` VALUES ('4739', 'KffBj0wEN', 'join', 'zhouning', '1700013425309');
 INSERT INTO `room_history` VALUES ('4740', 'KffBj0wEN', 'leave', 'zhouning', '1700013779632');
 INSERT INTO `room_history` VALUES ('4741', 'KffBj0wEN', 'join', 'zhouning', '1700013781921');
+
+-- ----------------------------
+-- Table structure for room_history
+-- ----------------------------
+DROP TABLE IF EXISTS `room_board_txt`;
+CREATE TABLE `room_board_txt` (
+  `id` varchar(40) NOT NULL COMMENT '主键',
+  `roomCode` varchar(10) NOT NULL COMMENT '房间号',
+  `txt` varchar(255) NOT NULL COMMENT '文本内容',
+  `x` int(11) NOT NULL COMMENT 'x坐标值',
+  `y` int(11) NOT NULL COMMENT 'y坐标值',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+

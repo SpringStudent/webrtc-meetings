@@ -57,9 +57,10 @@
                 id="whiteboard"
                 ref="whiteboard"
                 @mousedown="drawStart"
-                @mousemove="drawEnd"
+                @mousemove="drawIn"
+                @mouseup="drawEnd"
                 width="1000"
-                height="559" 
+                height="559"
               ></canvas>
               <div class="colors-cont">
                 <div class="black" @click="setColor('black')"></div>
@@ -72,13 +73,17 @@
                 <div class="pink" @click="setColor('#fd79a8')"></div>
                 <div class="brown" @click="setColor('#834c32')"></div>
                 <div class="grey" @click="setColor('gray')"></div>
-                <div class="eraser" @click="setEraser()">
-                  <font-awesome-icon :icon="['fas', 'eraser']" size="xl" />
+                <div class="txt" @click="setTxt()">
+                  <font-awesome-icon :icon="['fas', 'font']" size="xl" />
                 </div>
                 <div class="clearboard" @click="clearBoard()">
                   <font-awesome-icon :icon="['fas', 'trash-can']" size="xl" />
                 </div>
+                <div class="eraser" @click="setEraser()">
+                  <font-awesome-icon :icon="['fas', 'eraser']" size="xl" />
+                </div>
               </div>
+              <div class="txtinput"></div>
             </div>
           </div>
         </el-main>
@@ -126,16 +131,22 @@ export default {
   name: "MeetingPage",
   data() {
     return {
-      isDrawing: 0,
       x: 0,
       y: 0,
       color: "black",
       drawSize: 3,
       colorRemote: "black",
+      txtPos: [],
+      drawType: "line",
+      isDrawing: false,
+      inputTxt: "",
       drawsizeRemote: 3,
+      editingIndex: -1,
       ctx: undefined,
+      selectedText: null,
       roomCode: "",
       roomName: "",
+      textData: [],
       chatForm: {
         sendMsg: "",
       },
@@ -175,12 +186,7 @@ export default {
   },
   mounted() {
     //初始化canvas
-    this.ctx = this.$refs.whiteboard.getContext('2d');
-    window.addEventListener('mouseup', e => {
-        if (this.isDrawing) {
-          this.isDrawing = 0;
-        }
-    })
+    this.ctx = this.$refs.whiteboard.getContext("2d");
     const queryParams = this.$route.query;
     this.roomCode = queryParams.roomCode;
     this.$axios
@@ -210,94 +216,109 @@ export default {
       },
     };
     //1.初始化个人摄像头
-    navigator.mediaDevices.getUserMedia(constraints).then((ls) => {
-      this.clients[0].localStream = ls;
-      //2.连接到会议室
-      this.socket = io.connect(
-        this.$meetingWebsocketURL +
-          "?roomCode=" +
-          this.roomCode +
-          "&username=" +
-          this.clients[0].username
-      );
-      this.socket.on("connect", () => {
-        this.socket.emit("roomUser");
-      });
-      this.socket.on("joinRoom", (username, msg) => {
-        this.socket.emit("getBoard")
-        if (this.clients[0].username === username) {
-          this.pushSdpSrs();
-        } else {
-          this.pullSdpSrs(username);
-        }
-        this.chatList += `<div style="text-align:center;margin-top:5px;margin-bottom:5px">
-                          <div>
-                              <div><span style="font-size: 0.7rem">${msg}</span></div>
-                          </div>
-                      </div>`;
-      });
-      this.socket.on("leaveRoom", (username, msg) => {
-        if (this.clients[0].username != username) {
+    navigator.mediaDevices
+      .getUserMedia(constraints)
+      .then((ls) => {
+        this.clients[0].localStream = ls;
+        //2.连接到会议室
+        this.socket = io.connect(
+          this.$meetingWebsocketURL +
+            "?roomCode=" +
+            this.roomCode +
+            "&username=" +
+            this.clients[0].username
+        );
+        this.socket.on("connect", () => {
+          this.socket.emit("roomUser");
+        });
+        this.socket.on("joinRoom", (username, msg) => {
+          this.socket.emit("getBoard");
+          if (this.clients[0].username === username) {
+            this.pushSdpSrs();
+          } else {
+            this.pullSdpSrs(username);
+          }
           this.chatList += `<div style="text-align:center;margin-top:5px;margin-bottom:5px">
                           <div>
                               <div><span style="font-size: 0.7rem">${msg}</span></div>
                           </div>
                       </div>`;
-        }
-        this.clients = this.clients.filter((item) => item.username != username);
-      });
-      this.socket.on("roomUser", (users) => {
-        for (let i = 0; i < users.length; i++) {
-          if (users[i] != this.clients[0].username) {
-            console.log(users[i])
-            this.pullSdpSrs(users[i]);
+        });
+        this.socket.on("leaveRoom", (username, msg) => {
+          if (this.clients[0].username != username) {
+            this.chatList += `<div style="text-align:center;margin-top:5px;margin-bottom:5px">
+                          <div>
+                              <div><span style="font-size: 0.7rem">${msg}</span></div>
+                          </div>
+                      </div>`;
           }
-        }
-      });
-      this.socket.on("receiveMsg", (username, time, msg) => {
-        //自己发送的消息，靠右侧
-        if (username === this.clients[0].username) {
-          this.chatList += `<div style="text-align:right;margin-right:12px">`;
-        } else {
-          this.chatList += `<div style="text-align:left;margin-left:12px">`;
-        }
-        this.chatList += `<div>
+          this.clients = this.clients.filter(
+            (item) => item.username != username
+          );
+        });
+        this.socket.on("roomUser", (users) => {
+          for (let i = 0; i < users.length; i++) {
+            if (users[i] != this.clients[0].username) {
+              console.log(users[i]);
+              this.pullSdpSrs(users[i]);
+            }
+          }
+        });
+        this.socket.on("receiveMsg", (username, time, msg) => {
+          //自己发送的消息，靠右侧
+          if (username === this.clients[0].username) {
+            this.chatList += `<div style="text-align:right;margin-right:12px">`;
+          } else {
+            this.chatList += `<div style="text-align:left;margin-left:12px">`;
+          }
+          this.chatList += `<div>
                               <div><span style="color:#4ecca3;font-weight:bold">${username}</span><span style="color:#04da8f;"> ${time}</span></div>
                           </div>
                           <div style="margin-top:5px;margin-bottom:5px">
                               ${msg}
                           </div>
                       </div>`;
-      });
-      this.socket.on("meetingEvent_editName", (roomName, msg) => {
-        console.log(msg);
-        this.chatList += `<div style="text-align:center;margin-top:5px;margin-bottom:5px">
+        });
+        this.socket.on("meetingEvent_editName", (roomName, msg) => {
+          console.log(msg);
+          this.chatList += `<div style="text-align:center;margin-top:5px;margin-bottom:5px">
                           <div>
                               <div><span style="font-size: 0.7rem">${msg}</span></div>
                           </div>
                       </div>`;
-        this.roomName = roomName;
-      });
-      this.socket.on("drawBoard",(newx, newy, oldx, oldy,color,drawSize)=>{
-        this.colorRemote = color;
-        this.drawsizeRemote = drawSize;
-        this.drawRemote(newx, newy, oldx, oldy);
-      });
-      this.socket.on("clearBoard",()=>{
-        this.ctx.clearRect(0, 0, 1000, 559);
-      });
-      this.socket.on("getBoard",(boardData)=>{
-        let img = new Image();
-        img.onload = ()=>{
-          this.ctx.drawImage(img, 0, 0);
-        };
-        img.src = boardData;
+          this.roomName = roomName;
+        });
+        this.socket.on(
+          "drawLine",
+          (newx, newy, oldx, oldy, color, drawSize) => {
+            this.colorRemote = color;
+            this.drawsizeRemote = drawSize;
+            this.drawRemote(newx, newy, oldx, oldy);
+          }
+        );
+        this.socket.on("drawText", (drawTxt, drawX, drawY) => {
+          this.drawText(drawTxt, drawX, drawY);
+        });
+        this.socket.on("reDrawText", (drawTxt, drawX, drawY, width, height) => {
+          this.ctx.clearRect(drawX, drawY, width, height);
+          this.drawText(drawTxt, drawX, drawY);
+        });
+        this.socket.on("clearBoard", () => {
+          this.ctx.clearRect(0, 0, 1000, 559);
+        });
+        this.socket.on("getBoard", (boardData) => {
+          let img = new Image();
+          img.onload = () => {
+            this.ctx.drawImage(img, 0, 0);
+          };
+          img.src = boardData;
+        });
       })
-    }).catch((error)=>{
-      this.$message.error("获取媒体失败，请检查后重试");
-      this.$refs.chatInput.disabled = true;
-      this.$refs.whiteboard.classList.add('whiteboard-cont-disable')
-    });
+      .catch((error) => {
+        this.$message.error("获取媒体失败，请检查后重试");
+        this.$refs.chatInput.disabled = true;
+        this.$refs.whiteboard.classList.add("whiteboard-cont-disable");
+      });
   },
   methods: {
     async send(formName) {
@@ -418,7 +439,6 @@ export default {
       this.$axios
         .post(this.$srsServerAPIURL + "rtc/v1/play/", data)
         .then(async (res) => {
-          console.log(res);
           if (res.code === 0) {
             await pc.setRemoteDescription(
               new RTCSessionDescription({ type: "answer", sdp: res.sdp })
@@ -449,37 +469,148 @@ export default {
         }
       }
     },
+    findClickedText(x, y) {
+      return this.textData.find((data) => {
+        const textWidth = this.ctx.measureText(data.txt).width;
+        const textHeight = 14;
+        return (
+          x >= data.x &&
+          x <= data.x + textWidth &&
+          y >= data.y - textHeight &&
+          y <= data.y
+        );
+      });
+    },
+    editSelectedText(e) {
+      if (this.selectedText) {
+        let sx = this.selectedText.x;
+        let sy = this.selectedText.y;
+        let sid = this.selectedText.id;
+        let stxt = this.selectedText.txt;
+        let textInput = document.createElement("input");
+        textInput.type = "text";
+        textInput.value = this.selectedText.txt;
+        textInput.style.position = "absolute";
+        textInput.style.left = sx + "px";
+        textInput.style.top = sy + "px";
+        document.querySelector(".txtinput").appendChild(textInput);
+        textInput.focus();
+        textInput.addEventListener("blur", () => {
+          let newText = textInput.value;
+          if (this.selectedText) {
+            this.selectedText.txt = newText;
+            this.selectedText = null;
+          }
+          let width = this.ctx.measureText(stxt).width;
+          this.ctx.clearRect(sx, sy, width, 14);
+          this.drawText(newText, sx, sy);
+          this.socket.emit("reDrawText", sid,newText, sx, sy, width, 14);
+          document.querySelector(".txtinput").removeChild(textInput);
+        });
+      }
+    },
+    setTxt() {
+      this.ctx.textBaseline = "top";
+      this.drawType = "text";
+    },
     setColor(newcolor) {
-      console.log(newcolor)
       this.color = newcolor;
       this.drawsize = 3;
+      this.drawType = "line";
     },
     setEraser() {
       this.color = "white";
       this.drawsize = 20;
+      this.drawType = "line";
     },
-    clearBoard(){
-      if (window.confirm('确定要清空画板吗')) {
+    clearBoard() {
+      if (window.confirm("确定要清空画板吗")) {
         this.ctx.clearRect(0, 0, 1000, 559);
-        this.socket.emit('clearBoard');
-      }else{
+        this.socket.emit("clearBoard");
+      } else {
         return;
       }
     },
     drawStart(e) {
-      this.x = e.offsetX;
-      this.y = e.offsetY;
-      this.isDrawing = 1;
-    },
-    drawEnd(e) {
-      if (this.isDrawing) {
-        this.draw(e.offsetX, e.offsetY, this.x, this.y);
-        this.socket.emit('drawBoard', e.offsetX, e.offsetY, this.x, this.y, this.color, this.drawsize);
+      if (this.drawType === "text") {
+        e.preventDefault();
+        this.$axios
+          .get(
+            this.$meetingServerURL +
+              "room/listRoomBoardTxt?roomCode=" +
+              this.roomCode
+          )
+          .then(async (res) => {
+            if (res.code == 200) {
+              this.textData = res.result;
+            } else {
+              this.$message.error(res.msg);
+            }
+          })
+          .catch((err) => {
+            this.$message.error(err);
+          });
+        let rect = this.$refs.whiteboard.getBoundingClientRect();
+        let x = e.clientX - rect.left;
+        let y = e.clientY - rect.top;
+        let clickedText = this.findClickedText(x, y);
+        if (clickedText) {
+          this.selectedText = clickedText;
+          this.editSelectedText(e);
+        } else {
+          let position = { x: e.offsetX, y: e.offsetY };
+          let textInput = document.createElement("input");
+          let id = Date.now() + Math.random().toString(36).substr(2, 9);
+          textInput.type = "text";
+          textInput.style.border = "none";
+          textInput.style.position = "absolute";
+          textInput.style.left = e.offsetX + "px";
+          textInput.style.top = e.offsetY + "px";
+          document.querySelector(".txtinput").appendChild(textInput);
+          textInput.focus();
+          textInput.addEventListener("blur", () => {
+            let txt = textInput.value;
+            document.querySelector(".txtinput").removeChild(textInput);
+            if (txt) {
+              if (this.selectedText) {
+                this.selectedText.txt = txt;
+                this.selectedText = null;
+              } else {
+                this.drawText(txt, position.x, position.y);
+                this.socket.emit("drawText", id, txt, position.x, position.y);
+              }
+            }
+          });
+        }
+      } else if (this.drawType === "line") {
+        this.isDrawing = true;
         this.x = e.offsetX;
         this.y = e.offsetY;
-    }
+      }
     },
-    draw(newx, newy, oldx, oldy){
+
+    drawIn(e) {
+      if (this.isDrawing && this.drawType === "line") {
+        this.drawLine(e.offsetX, e.offsetY, this.x, this.y);
+        this.socket.emit(
+          "drawLine",
+          e.offsetX,
+          e.offsetY,
+          this.x,
+          this.y,
+          this.color,
+          this.drawsize
+        );
+        this.x = e.offsetX;
+        this.y = e.offsetY;
+      }
+    },
+    drawEnd(e) {
+      if (this.drawType === "line") {
+        this.isDrawing = false;
+      }
+    },
+    drawLine(newx, newy, oldx, oldy) {
       this.ctx.strokeStyle = this.color;
       this.ctx.lineWidth = this.drawsize;
       this.ctx.beginPath();
@@ -487,9 +618,9 @@ export default {
       this.ctx.lineTo(newx, newy);
       this.ctx.stroke();
       this.ctx.closePath();
-      this.socket.emit('storeBoard', this.$refs.whiteboard.toDataURL());
+      this.socket.emit("storeBoard", this.$refs.whiteboard.toDataURL());
     },
-    drawRemote(newx, newy, oldx, oldy){
+    drawRemote(newx, newy, oldx, oldy) {
       this.ctx.strokeStyle = this.colorRemote;
       this.ctx.lineWidth = this.drawsizeRemote;
       this.ctx.beginPath();
@@ -497,7 +628,13 @@ export default {
       this.ctx.lineTo(newx, newy);
       this.ctx.stroke();
       this.ctx.closePath();
-    }
+    },
+    drawText(text, x, y) {
+      this.ctx.font = "14px Arial";
+      this.ctx.fillStyle = "#000";
+      this.ctx.fillText(text, x, y);
+      this.socket.emit("storeBoard", this.$refs.whiteboard.toDataURL());
+    },
   },
 };
 </script>
@@ -539,9 +676,8 @@ export default {
 
 .whiteboard-cont {
   position: relative;
-
 }
-.whiteboard-cont-disable{
+.whiteboard-cont-disable {
   cursor: not-allowed;
   pointer-events: none;
   background-color: #f4f7fa !important;
@@ -661,21 +797,39 @@ export default {
   cursor: pointer;
 }
 .whiteboard-cont .colors-cont .eraser {
-  height: 30px;
-  width: 30px;
+  height: 20px;
+  width: 20px;
   margin-top: 10px;
   color: #2b2b2b;
+}
+.whiteboard-cont .colors-cont .txt {
+  height: 20px;
+  width: 20px;
+  margin-top: 10px;
+  color: #2b2b2b;
+}
+.whiteboard-cont .colors-cont .txt:hover {
+  cursor: pointer;
 }
 .whiteboard-cont .colors-cont .eraser:hover {
   cursor: pointer;
 }
 .whiteboard-cont .colors-cont .clearboard {
-  height: 30px;
-  width: 30px;
+  height: 20px;
+  width: 20px;
   margin-top: 10px;
   color: #2b2b2b;
 }
 .whiteboard-cont .colors-cont .clearboard:hover {
   cursor: pointer;
+}
+.txtinput {
+  position: relative;
+  z-index: 100;
+  margin: 0px;
+  padding: 0px;
+  background-color: transparent;
+  border-radius: 0px;
+  border: none;
 }
 </style>

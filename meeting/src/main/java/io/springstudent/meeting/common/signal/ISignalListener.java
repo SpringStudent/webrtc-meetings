@@ -19,7 +19,11 @@ public interface ISignalListener {
 
     void meetingEvent(SocketIOClient client, RoomEvent roomEvent) throws Exception;
 
-    void drawBoard(SocketIOClient client, int nowX, int nowY, int x, int y, String color, int drawSize) throws Exception;
+    void drawLine(SocketIOClient client, int nowX, int nowY, int x, int y, String color, int drawSize) throws Exception;
+
+    void drawText(SocketIOClient client,String id,String txt, int x, int y) throws Exception;
+
+    void reDrawText(SocketIOClient client,String id,String txt, int x, int y,int width,int height) throws Exception;
 
     void storeBoard(SocketIOClient client, String boardData) throws Exception;
 

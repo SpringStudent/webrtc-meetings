@@ -3,12 +3,14 @@ package io.springstudent.meeting.room.controller;
 import com.gysoft.jdbc.bean.Page;
 import com.gysoft.jdbc.bean.PageResult;
 import io.springstudent.meeting.room.bean.RoomInfo;
+import io.springstudent.meeting.room.pojo.RoomBoardTxt;
 import io.springstudent.meeting.room.service.RoomService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.List;
 
 /**
  * @author zhouning
@@ -59,6 +61,16 @@ public class RoomController {
             return roomService.pageRoom(page);
         }catch (Exception e){
             logger.error("pageRoom error,page={}",page,e);
+            throw e;
+        }
+    }
+
+    @GetMapping("/listRoomBoardTxt")
+    public List<RoomBoardTxt> listRoomBoardTxt(@RequestParam String roomCode)throws Exception{
+        try {
+            return roomService.listRoomBoardTxt(roomCode);
+        }catch (Exception e){
+            logger.error("listRoomBoardTxt error,roomCode={}",roomCode,e);
             throw e;
         }
     }

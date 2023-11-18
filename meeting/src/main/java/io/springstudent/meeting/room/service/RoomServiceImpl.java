@@ -5,10 +5,12 @@ import io.springstudent.meeting.common.util.EmptyUtils;
 import io.springstudent.meeting.common.util.SubjectUtils;
 import io.springstudent.meeting.room.bean.RoomInfo;
 import io.springstudent.meeting.room.dao.RoomBoardDao;
+import io.springstudent.meeting.room.dao.RoomBoardTxtDao;
 import io.springstudent.meeting.room.dao.RoomDao;
 import io.springstudent.meeting.room.dao.RoomHistoryDao;
 import io.springstudent.meeting.room.pojo.Room;
 import io.springstudent.meeting.room.pojo.RoomBoard;
+import io.springstudent.meeting.room.pojo.RoomBoardTxt;
 import io.springstudent.meeting.room.pojo.RoomHistory;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.stereotype.Service;
@@ -35,6 +37,9 @@ public class RoomServiceImpl implements RoomService {
 
     @Resource
     private RoomHistoryDao roomHistoryDao;
+
+    @Resource
+    private RoomBoardTxtDao roomBoardTxtDao;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -80,4 +85,8 @@ public class RoomServiceImpl implements RoomService {
         return pageResult;
     }
 
+    @Override
+    public List<RoomBoardTxt> listRoomBoardTxt(String roomCode) throws Exception {
+        return roomBoardTxtDao.queryWithCriteria(new Criteria().where("roomCode",roomCode));
+    }
 }
