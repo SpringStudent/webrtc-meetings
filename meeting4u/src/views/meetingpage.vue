@@ -61,6 +61,7 @@
                 @mouseup="drawEnd"
                 width="1000"
                 height="559"
+                class="whiteboard-cont-disable"
               ></canvas>
               <div class="colors-cont">
                 <div class="black" @click="setColor('black')"></div>
@@ -101,6 +102,7 @@
                   maxlength="64"
                   class="input-with-select"
                   ref="chatInput"
+                  :disabled="canChat"
                 >
                   <el-button
                     slot="append"
@@ -151,6 +153,7 @@ export default {
       roomCode: "",
       roomName: "",
       textData: [],
+      canChat:true,
       chatForm: {
         sendMsg: "",
       },
@@ -233,6 +236,8 @@ export default {
             this.clients[0].username
         );
         this.socket.on("connect", () => {
+          this.canChat = false;
+          this.$refs.whiteboard.classList.remove("whiteboard-cont-disable");
           this.socket.emit("roomUser");
           this.socket.emit("getChat");
         });
@@ -348,8 +353,6 @@ export default {
       })
       .catch((error) => {
         this.$message.error("获取媒体失败，请检查后重试");
-        this.$refs.chatInput.disabled = true;
-        this.$refs.whiteboard.classList.add("whiteboard-cont-disable");
       });
   },
   methods: {
