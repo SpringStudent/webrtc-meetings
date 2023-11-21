@@ -10,8 +10,10 @@ import com.gysoft.jdbc.bean.Criteria;
 import com.gysoft.jdbc.bean.SQL;
 import io.springstudent.meeting.chat.dao.ChatDao;
 import io.springstudent.meeting.chat.pojo.Chat;
+import io.springstudent.meeting.chat.service.ChatService;
 import io.springstudent.meeting.common.bean.RoomEvent;
 import io.springstudent.meeting.common.util.EmptyUtils;
+import io.springstudent.meeting.common.util.SpringUtil;
 import io.springstudent.meeting.room.dao.RoomBoardDao;
 import io.springstudent.meeting.room.dao.RoomBoardTxtDao;
 import io.springstudent.meeting.room.dao.RoomDao;
@@ -177,6 +179,12 @@ public class SignalListener implements ISignalListener {
         if (roomBoard != null) {
             client.sendEvent("getBoard", roomBoard.getBoardData());
         }
+    }
+
+    @Override
+    @OnEvent("getChat")
+    public void getChat(SocketIOClient client) throws Exception {
+        client.sendEvent("getChat", SpringUtil.getBean(ChatService.class).chatInfos(roomCode(client)));
     }
 
     private String roomCode(SocketIOClient client) {

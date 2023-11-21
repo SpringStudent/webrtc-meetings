@@ -234,6 +234,7 @@ export default {
         );
         this.socket.on("connect", () => {
           this.socket.emit("roomUser");
+          this.socket.emit("getChat");
         });
         this.socket.on("joinRoom", (username, msg) => {
           this.socket.emit("getBoard");
@@ -307,8 +308,8 @@ export default {
           this.ctx.clearRect(drawX, drawY, width, height);
           this.drawText(drawTxt, drawX, drawY);
         });
-        this.socket.on("drawSqr", (x, y, width,height) => {
-          this.drawSquare(x, y, width,height);
+        this.socket.on("drawSqr", (x, y, width, height) => {
+          this.drawSquare(x, y, width, height);
         });
         this.socket.on("clearBoard", () => {
           this.ctx.clearRect(0, 0, 1000, 559);
@@ -319,6 +320,30 @@ export default {
             this.ctx.drawImage(img, 0, 0);
           };
           img.src = boardData;
+        });
+        this.socket.on("getChat", (chatData) => {
+          chatData.forEach((item) => {
+            if (item.type === 1) {
+              this.chatList += `<div style="text-align:center;margin-top:5px;margin-bottom:5px">
+                          <div>
+                              <div><span style="font-size: 0.7rem">${item.content}</span></div>
+                          </div>
+                      </div>`;
+            } else if (item.type === 0) {
+              if (item.sender === this.clients[0].username) {
+                this.chatList += `<div style="text-align:right;margin-right:12px">`;
+              } else {
+                this.chatList += `<div style="text-align:left;margin-left:12px">`;
+              }
+              this.chatList += `<div>
+                              <div><span style="color:#4ecca3;font-weight:bold">${item.sender}</span><span style="color:#04da8f;"> ${item.sendTime}</span></div>
+                          </div>
+                          <div style="margin-top:5px;margin-bottom:5px">
+                              ${item.content}
+                          </div>
+                      </div>`;
+            }
+          });
         });
       })
       .catch((error) => {
@@ -636,10 +661,21 @@ export default {
       if (this.drawType === "line") {
         this.isDrawing = false;
       }
-      if(this.drawType === "square"){
+      if (this.drawType === "square") {
         this.isDrawing = false;
-        this.drawSquare(this.x, this.y, this.currentRect.offsetWidth, this.currentRect.offsetHeight);
-        this.socket.emit("drawSqr",this.x, this.y, this.currentRect.offsetWidth, this.currentRect.offsetHeight);
+        this.drawSquare(
+          this.x,
+          this.y,
+          this.currentRect.offsetWidth,
+          this.currentRect.offsetHeight
+        );
+        this.socket.emit(
+          "drawSqr",
+          this.x,
+          this.y,
+          this.currentRect.offsetWidth,
+          this.currentRect.offsetHeight
+        );
         document.querySelector(".txtinput").removeChild(this.currentRect);
       }
     },
@@ -668,10 +704,10 @@ export default {
       this.ctx.fillText(text, x, y);
       this.socket.emit("storeBoard", this.$refs.whiteboard.toDataURL());
     },
-    drawSquare(x,y,width,height) {
-      this.ctx.strokeStyle = '#000';
+    drawSquare(x, y, width, height) {
+      this.ctx.strokeStyle = "#000";
       this.ctx.lineWidth = 2;
-      this.ctx.strokeRect(x,y,width,height);
+      this.ctx.strokeRect(x, y, width, height);
     },
   },
 };

@@ -1,6 +1,7 @@
 package io.springstudent.meeting.common.signal;
 
 import com.corundumstudio.socketio.SocketIOClient;
+import io.springstudent.meeting.chat.bean.ChatInfo;
 import io.springstudent.meeting.common.bean.RoomEvent;
 
 /**
@@ -32,4 +33,6 @@ public interface ISignalListener {
     void clearBoard(SocketIOClient client) throws Exception;
 
     void getBoard(SocketIOClient client)throws Exception;
+
+    void getChat(SocketIOClient client)throws Exception;
 }
