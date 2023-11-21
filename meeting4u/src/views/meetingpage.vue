@@ -76,6 +76,9 @@
                 <div class="txt" @click="setTxt()">
                   <font-awesome-icon :icon="['fas', 'font']" size="xl" />
                 </div>
+                <div class="square" @click="setSqr()">
+                  <font-awesome-icon :icon="['far', 'square']" size="xl" />
+                </div>
                 <div class="clearboard" @click="clearBoard()">
                   <font-awesome-icon :icon="['fas', 'trash-can']" size="xl" />
                 </div>
@@ -144,6 +147,7 @@ export default {
       editingIndex: -1,
       ctx: undefined,
       selectedText: null,
+      currentRect: null,
       roomCode: "",
       roomName: "",
       textData: [],
@@ -302,6 +306,9 @@ export default {
         this.socket.on("reDrawText", (drawTxt, drawX, drawY, width, height) => {
           this.ctx.clearRect(drawX, drawY, width, height);
           this.drawText(drawTxt, drawX, drawY);
+        });
+        this.socket.on("drawSqr", (x, y, width,height) => {
+          this.drawSquare(x, y, width,height);
         });
         this.socket.on("clearBoard", () => {
           this.ctx.clearRect(0, 0, 1000, 559);
@@ -504,7 +511,7 @@ export default {
           let width = this.ctx.measureText(stxt).width;
           this.ctx.clearRect(sx, sy, width, 14);
           this.drawText(newText, sx, sy);
-          this.socket.emit("reDrawText", sid,newText, sx, sy, width, 14);
+          this.socket.emit("reDrawText", sid, newText, sx, sy, width, 14);
           document.querySelector(".txtinput").removeChild(textInput);
         });
       }
@@ -512,6 +519,9 @@ export default {
     setTxt() {
       this.ctx.textBaseline = "top";
       this.drawType = "text";
+    },
+    setSqr() {
+      this.drawType = "square";
     },
     setColor(newcolor) {
       this.color = newcolor;
@@ -586,28 +596,51 @@ export default {
         this.isDrawing = true;
         this.x = e.offsetX;
         this.y = e.offsetY;
+      } else if (this.drawType === "square") {
+        this.isDrawing = true;
+        this.x = e.offsetX;
+        this.y = e.offsetY;
+        this.currentRect = document.createElement("div");
+        this.currentRect.classList.add("rectangle");
+        document.querySelector(".txtinput").appendChild(this.currentRect);
+        this.drawIn(e);
       }
     },
 
     drawIn(e) {
-      if (this.isDrawing && this.drawType === "line") {
-        this.drawLine(e.offsetX, e.offsetY, this.x, this.y);
-        this.socket.emit(
-          "drawLine",
-          e.offsetX,
-          e.offsetY,
-          this.x,
-          this.y,
-          this.color,
-          this.drawsize
-        );
-        this.x = e.offsetX;
-        this.y = e.offsetY;
+      if (this.isDrawing) {
+        if (this.drawType === "line") {
+          this.drawLine(e.offsetX, e.offsetY, this.x, this.y);
+          this.socket.emit(
+            "drawLine",
+            e.offsetX,
+            e.offsetY,
+            this.x,
+            this.y,
+            this.color,
+            this.drawsize
+          );
+          this.x = e.offsetX;
+          this.y = e.offsetY;
+        } else if (this.drawType === "square") {
+          let width = e.offsetX - this.$refs.whiteboard.offsetLeft - this.x;
+          let height = e.offsetY - this.$refs.whiteboard.offsetTop - this.y;
+          this.currentRect.style.width = `${width}px`;
+          this.currentRect.style.height = `${height}px`;
+          this.currentRect.style.left = `${this.x}px`;
+          this.currentRect.style.top = `${this.y}px`;
+        }
       }
     },
     drawEnd(e) {
       if (this.drawType === "line") {
         this.isDrawing = false;
+      }
+      if(this.drawType === "square"){
+        this.isDrawing = false;
+        this.drawSquare(this.x, this.y, this.currentRect.offsetWidth, this.currentRect.offsetHeight);
+        this.socket.emit("drawSqr",this.x, this.y, this.currentRect.offsetWidth, this.currentRect.offsetHeight);
+        document.querySelector(".txtinput").removeChild(this.currentRect);
       }
     },
     drawLine(newx, newy, oldx, oldy) {
@@ -634,6 +667,11 @@ export default {
       this.ctx.fillStyle = "#000";
       this.ctx.fillText(text, x, y);
       this.socket.emit("storeBoard", this.$refs.whiteboard.toDataURL());
+    },
+    drawSquare(x,y,width,height) {
+      this.ctx.strokeStyle = '#000';
+      this.ctx.lineWidth = 2;
+      this.ctx.strokeRect(x,y,width,height);
     },
   },
 };
@@ -693,15 +731,15 @@ export default {
   display: flex;
   flex-direction: column;
   position: absolute;
-  right: 80px;
-  top: 50px;
+  right: 60px;
+  top: 15px;
 }
 .whiteboard-cont .colors-cont .black {
   height: 30px;
   width: 30px;
   border-radius: 50px;
   background-color: black;
-  margin-top: 10px;
+  margin-top: 3px;
 }
 .whiteboard-cont .colors-cont .black:hover {
   cursor: pointer;
@@ -811,6 +849,16 @@ export default {
 .whiteboard-cont .colors-cont .txt:hover {
   cursor: pointer;
 }
+.whiteboard-cont .colors-cont .square {
+  height: 20px;
+  width: 20px;
+  margin-top: 10px;
+  color: #2b2b2b;
+}
+.whiteboard-cont .colors-cont .square:hover {
+  cursor: pointer;
+}
+
 .whiteboard-cont .colors-cont .eraser:hover {
   cursor: pointer;
 }
@@ -831,5 +879,12 @@ export default {
   background-color: transparent;
   border-radius: 0px;
   border: none;
+}
+</style>
+<style >
+.rectangle {
+  position: absolute;
+  border: 2px solid #000;
+  pointer-events: none;
 }
 </style>

@@ -23,6 +23,8 @@ public interface ISignalListener {
 
     void drawText(SocketIOClient client,String id,String txt, int x, int y) throws Exception;
 
+    void drawSqr(SocketIOClient client, int x, int y, int width, int height)throws Exception;
+
     void reDrawText(SocketIOClient client,String id,String txt, int x, int y,int width,int height) throws Exception;
 
     void storeBoard(SocketIOClient client, String boardData) throws Exception;

@@ -139,6 +139,13 @@ public class SignalListener implements ISignalListener {
     }
 
     @Override
+    @OnEvent("drawSqr")
+    public void drawSqr(SocketIOClient client, int x, int y, int width, int height) throws Exception {
+        String roomCode = roomCode(client);
+        socketIOServer.getRoomOperations(roomCode).sendEvent("drawSqr", client, x, y, width,height);
+    }
+
+    @Override
     @OnEvent("reDrawText")
     public void reDrawText(SocketIOClient client, String id, String txt, int x, int y, int width, int height) throws Exception {
         String roomCode = roomCode(client);
