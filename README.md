@@ -21,12 +21,12 @@ Vue.prototype.$meetingServerURL = "http://172.16.1.72:9898/meeting/"
 Vue.prototype.$meetingWebsocketURL = "http://172.16.1.72:9999/"
 ```
 
-2.进入meeting4u目录执行cnpm install
+2.进入meeting4u目录执行npm install
 
 3.执行npm run serve启动客户端
 
 ### 浏览器访问meeting4u地址
-1.由于浏览器安全限制必须采用https访问系统才可以获取到系统摄像头和录音设备，如果没有https证书条件，建议使用<http://localhost:port/?#/home访问系统>
+1.由于浏览器安全限制必须采用https访问系统才可以获取到系统摄像头和录音设备，如果没有https证书条件，建议使用<http://localhost:port/?#/home>访问系统
 
 2.系统测试账号如下
 ```
