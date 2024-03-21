@@ -313,6 +313,14 @@ export default {
       return await this.getLocalUserMedia(constraints).catch(handleError);
     },
     async startMeeting() {
+      if (!this.formInline.videoId) {
+        this.$message.error("请选择摄像头");
+        return;
+      }
+      if (!this.formInline.audioInId) {
+        this.$message.error("请选择麦克风");
+        return;
+      }
       let rcode = undefined;
       await this.$axios
         .post(this.$meetingServerURL + "room/createRoom")
