@@ -131,6 +131,7 @@ var PeerConnection =
   window.RTCPeerConnection ||
   window.mozRTCPeerConnection ||
   window.webkitRTCPeerConnection;
+
 export default {
   components: { Play },
   name: "MeetingPage",

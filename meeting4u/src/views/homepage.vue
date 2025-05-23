@@ -193,7 +193,6 @@ function initInnerLocalDevice() {
         .catch(handleError);
     })
     .then(() => {
-      console.log(1231)
     }).catch(handleError);
 }
 

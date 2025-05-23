@@ -47,10 +47,10 @@ service.interceptors.response.use(
 Vue.prototype.$axios = service
 Vue.use(ElementUI);
 Vue.config.productionTip = false
-Vue.prototype.$srsServerAPIURL = 'http://172.16.1.72:1985/';
-Vue.prototype.$srsServerRTCURL = 'webrtc://172.16.1.72:8080/live/';
-Vue.prototype.$meetingServerURL = "http://172.16.1.72:9898/meeting/"
-Vue.prototype.$meetingWebsocketURL = "http://172.16.1.72:9999/"
+Vue.prototype.$srsServerAPIURL = 'http://172.16.1.37:1985/';
+Vue.prototype.$srsServerRTCURL = 'webrtc://172.16.1.37:8080/live/';
+Vue.prototype.$meetingServerURL = "http://172.16.1.37:9898/meeting/"
+Vue.prototype.$meetingWebsocketURL = "http://172.16.1.37:9899/"
 
 
 new Vue({
